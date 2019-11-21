@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 
+import org.glassfish.jersey.jackson.internal.jackson.jaxrs.json.annotation.JSONP;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -21,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import fr.gtm.cinema.dto.ActeurDto;
 import fr.gtm.cinema.dto.FilmDto;
+import fr.gtm.cinema.dto.RoleDto;
 import fr.gtm.cinema.entities.Acteur;
 import fr.gtm.cinema.entities.Film;
 import fr.gtm.cinema.entities.Role;
@@ -37,8 +39,9 @@ public class CinemaRestController {
 	@Autowired
 	private FilmRepository filmRepository;
 	private Logger LOGMAIL = Logger.getLogger("MAIL");
-	
-	// envoi des acteurs qui des films qui ont des acteurs...  à l'infini!
+	private Logger LOGCINE = Logger.getLogger("CINEMA");
+
+	// envoi des acteurs qui des films qui ont des acteurs... à l'infini!
 //	@GetMapping(path = "/acteur/{id}")
 //	public Acteur findActeurById(@PathVariable("id") long id) {
 //		Optional<Acteur> optional  = acteurRepository.findById(id);
@@ -48,79 +51,96 @@ public class CinemaRestController {
 //		return null;
 //		
 //	}
-	
-	//http://localhost:7070/acteur/5
+
+	// http://localhost:7070/acteur/5
 	@GetMapping(path = "/acteur/{id}")
 	public ActeurDto findActeurById(@PathVariable("id") long id) {
-		Optional<Acteur> optional  = acteurRepository.findById(id);
+		Optional<Acteur> optional = acteurRepository.findById(id);
 		if (optional.isPresent()) {
-			ActeurDto dto= new ActeurDto(optional.get());
+			ActeurDto dto = new ActeurDto(optional.get());
 			return dto;
 		}
 		return null;
-		
+
 	}
-	//http://localhost:7070/acteur/new
-	//on peut tester avec :{"civilite":"M","nom":"Hauer","prenom":"Rutger"}
+
+	// http://localhost:7070/acteur/new
+	// on peut tester avec :{"civilite":"M","nom":"Hauer","prenom":"Rutger"}
 	@PostMapping("/acteur/new")
 	public String creationActeur(@RequestBody ActeurDto dto) {
 		acteurRepository.save(dto.toActeur());
 		return "ça marche";
 	}
-	
+
 	/**
 	 * 
-	 * ajout de fonctinalité pour les mails
-	 * la dépendance mvn spring-boot-starter-mail a été ajoutée au pom
+	 * ajout de fonctinalité pour les mails la dépendance mvn
+	 * spring-boot-starter-mail a été ajoutée au pom
 	 */
 	@Autowired
-	private JavaMailSender mailsender;	
+	private JavaMailSender mailsender;
+
 	private void sendMail() {
 		SimpleMailMessage mail = new SimpleMailMessage();
-		//le domaine doit exister, y compris en local
+		// le domaine doit exister, y compris en local
 		mail.setTo("gaston@bovoyages.net");
-		//cette adresse email doit être valide
+		// cette adresse email doit être valide
 		mail.setFrom("Salade@tomates.oignon");
 		mail.setSubject("kebab");
 		mail.setText("sauce blanche");
 		mailsender.send(mail);
 	}
-	
-	//http://localhost:7070/mail/test
-	//on passe en multithread pour ne pas faire attendre côté navigateur
+
+	// http://localhost:7070/mail/test
+	// on passe en multithread pour ne pas faire attendre côté navigateur
 	@GetMapping("/mail/test")
 	public String testMail() {
 		try {
-			new Thread(()->sendMail()).start();
-			LOGMAIL.info("le mail a été envoyé");
+			new Thread(() -> sendMail()).start();
+			LOGMAIL.fine("le mail a été envoyé");
 		} catch (Exception e) {
-			LOGMAIL.info("le mail n'a pas été envoyé" +e.getMessage());
+			LOGMAIL.severe("le mail n'a pas été envoyé" + e.getMessage());
 		}
 		return "svp chef";
 	}
-	
+
 	@PostMapping("/mail/send")
 	// on peut tester avec le json : {"mail":"ssa@tss.oss"} pour mr
 	public String testrMail(@RequestBody MailReceptor mr) {
 		try {
-			new Thread(()->sendMail()).start();
+			new Thread(() -> sendMail()).start();
 			LOGMAIL.fine("le mail a été envoyé");
 		} catch (Exception e) {
-			LOGMAIL.severe("le mail n'a pas été envoyé" +e.getMessage());
+			LOGMAIL.severe("le mail n'a pas été envoyé" + e.getMessage());
 		}
-		return "envoyé à "+ mr.getMail();
+		return "envoyé à " + mr.getMail();
 	}
-	
+
 	@GetMapping("/film/all")
-	public List<FilmDto> getAllFilms(){
-		List<Film> films =  filmRepository.findAll();	
+	public List<FilmDto> getAllFilms() {
+		List<Film> films = filmRepository.findAll();
 		List<FilmDto> dtos = new ArrayList<FilmDto>();
 		for (Film f : films) {
-			dtos.add( new FilmDto(f));
+			dtos.add(new FilmDto(f));
 		}
-		return dtos;	
+		return dtos;
 	}
-	
+
+	@GetMapping(path = "/film/{id}")
+	public FilmDto findFilmById(@PathVariable("id") long id) {
+		Optional<Film> optional = filmRepository.findById(id);
+		if (optional.isPresent()) {
+			FilmDto dto = new FilmDto(optional.get());
+			return dto;
+		}
+		return null;
+	}
+
+//	{
+//	    "titre": "2001, l'Odyssée de l'espace",
+//	    "realisateur": "Stanley Kubrick"
+//	}
+
 //	@GetMapping(path = "/film/{id}")
 //	public List<String> getAllRolesFromFilm(@PathVariable("id") long id){
 //		// ne permet pas d'obtenir les roles
@@ -138,7 +158,7 @@ public class CinemaRestController {
 //		return listeRoles;
 //
 //	}
-	
+
 //	@GetMapping(path = "/film/{id}")
 //	public String getAllRolesFromFilm(@PathVariable("id") long id){
 //		Film film = filmRepository.getFilmById(id);
@@ -155,18 +175,78 @@ public class CinemaRestController {
 //        return json;
 //
 //	}
-	
-	
-	
-	@GetMapping(path = "/film/{id}")
-	public List<String> getAllRolesFromFilm(@PathVariable("id") long id){
 
+	@GetMapping(path = "/film/roles/{id}")
+	public List<String> getAllRolesFromFilm(@PathVariable("id") long id) {
 		Film film = filmRepository.getFilmById(id);
 		List<String> roles = FilmDto.roleDtoFilm(film);
 		return roles;
 
 	}
 
+//	@PostMapping("/film/save")
+//	public FilmDto saveFilm(@RequestBody Film f) {
+//		filmRepository.save(f);
+//		return new FilmDto(f);
+//	}
 
+	@PostMapping("/film/save")
+//	{"titre": "2001, l'Odyssée de l'espace","realisateur": "Stanley Kubrick"}
+	public String saveFilm(@RequestBody FilmDto dto) {
+		try {
+			filmRepository.save(dto.toFilm());
+			LOGCINE.fine("film créé");
+			return "ok";
+		} catch (Exception e) {
+			LOGCINE.severe("film pas créé");
+			return "raté";
+		}
+	}
+
+//	{"id":666, "titre" : "mon film", "realisateur":"le real",
+//		"roles":[{"role":{"role":"principal"}, "acteur": {"nom":"le nom"}},
+//		         {"role":{"role":"secondaire"}, "acteur": {"nom":"le nom"}}
+//		         ]}
+
+	@PostMapping("/film/save/actor/{id}")
+//	{"civilite": "M","nom": "Smith","prenom": "Roger"}
+//	{"role": "Extra-terrestre"}
+//	{"id": "666","role": "Extra-terrestre","civilite": "M","nom": "Smith","prenom": "Roger"}
+	
+	public String saveActorFilm(@RequestBody RoleDto wrapper, @PathVariable("id") long id) {
+		try {
+//			acteurRepository.save(dto.toActeur());
+//			LOGCINE.fine("acteur créé");
+//			
+//			Optional<Film> film = filmRepository.findById(id);
+
+			Film f = filmRepository.getFilmById(1);
+
+			Acteur a = wrapper.toActeur();
+			
+			Role r = wrapper.toRole();
+
+			Map<Role, Acteur> roles = f.getRoles();
+			roles.putIfAbsent(r, a);
+			filmRepository.save(f);
+
+			LOGCINE.fine("acteur ajouté");
+			return "ok";
+		} catch (Exception e) {
+			LOGCINE.severe("acteur pas ajouté");
+			return "raté";
+		}
+	}
+
+	@PostMapping("/film/save/acteurs")
+	public String saveFilm(@RequestBody Film film) {
+		try {
+			filmRepository.save(film);
+			return "ok";
+		} catch (Exception e) {
+			return "raté";
+		}
+
+	}
 
 }

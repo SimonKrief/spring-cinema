@@ -21,6 +21,21 @@ public class FilmDto {
 	}
 	
 	
+	
+	public FilmDto(String titre, String realisateur) {
+		super();
+		this.titre = titre;
+		this.realisateur = realisateur;
+	}
+
+	public Film toFilm() {
+		Film film = new Film();
+		film.setTitre(this.getTitre());
+		film.setRealisateur(this.getRealisateur());
+		return film;
+	}
+	
+	
 	public String getTitre() {
 		return titre;
 	}

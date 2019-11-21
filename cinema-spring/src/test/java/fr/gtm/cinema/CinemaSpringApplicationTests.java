@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -15,8 +16,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import fr.gtm.cinema.dto.FilmDto;
 import fr.gtm.cinema.entities.Acteur;
 import fr.gtm.cinema.entities.Film;
+import fr.gtm.cinema.entities.Role;
 import fr.gtm.cinema.repositories.ActeurRepository;
 import fr.gtm.cinema.repositories.FilmRepository;
 
@@ -98,6 +101,33 @@ class CinemaSpringApplicationTests {
 		
 		assertTrue(n-1==acteurRepository.findAll().size());
 	}
+	
+	@Test
+	void creationFilm() {
+		int n = filmRepository.findAll().size();
+		//Remarque : certaines contraintes commentées dans les entités pour permettre cela
+		FilmDto dto = new FilmDto("2001, l'Odyssée de l'espace","Stanley Kubrick");
+		filmRepository.save(dto.toFilm());
+		assertTrue(n+1== filmRepository.findAll().size());
+	}
+	
+	@Test
+	void ajoutActeurFilm() {
+//		Optional<Film> film = filmRepository.findById((long) 1);
+		Film f =filmRepository.getFilmById(1);
+		
+		Acteur a = new Acteur("?", "Smith", "Roger");
+		Role r = new Role("Extra-terrestre");
+		
+		Map<Role, Acteur> roles = f.getRoles();
+		int n = roles.size();
+		roles.putIfAbsent(r, a);
+		filmRepository.save(f);
+		
+		assertTrue(n+1==roles.size());
+
+	}
+	
 	
 
 }

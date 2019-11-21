@@ -42,9 +42,9 @@ public class Film {
 	private String realisateur;
 	@Column(name="date_sortie")
 	private LocalDate dateSortie;
-	@Min(1)
+//	@Min(1)
 	private int duree;	// durée en minutes;
-	@DecimalMin("1.0")
+//	@DecimalMin("1.0")
 	private double prixHT;
 
 

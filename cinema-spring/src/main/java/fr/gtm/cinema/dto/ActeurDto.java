@@ -22,9 +22,6 @@ public class ActeurDto {
 	public Acteur toActeur() {
 		Acteur acteur= new Acteur(civilite, nom, prenom);
 		acteur.setId(id);
-//		acteur.setNom(nom);
-//		acteur.setCivilite(civilite);
-//		acteur.setPrenom(prenom);
 		return acteur;
 	}
 	
